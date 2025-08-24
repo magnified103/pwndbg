@@ -1,22 +1,20 @@
 import contextlib
+import ctypes
 import shlex
 from typing import Any, Callable, Iterator, List, Literal, Tuple, TypeVar
-from pybag.dbgeng.idebugclient import DebugClient
-from pybag.dbgeng.idebugsystemobjects import DebugSystemObjects
-from pybag.dbgeng.idebugregisters import DebugRegisters
-from pybag.dbgeng.dbgengstructs import DebugValue
 from typing_extensions import override
 
 import pwndbg
 from pwndbg.dbg import selection
 from pwndbg.dbg.dbgeng.dispatch import CommandDispatcher
+from pwndbg.dbg.dbgeng.wrapper import IDebugClient, IDebugControl, IDebugRegisters, IDebugSystemObjects
 
 T = TypeVar("T")
 
 
-dbgclient: DebugClient = DebugClient()
-dbgsysobjects: DebugSystemObjects
-dbgregisters: DebugRegisters
+dbgclient: IDebugClient
+dbgsysobjects: IDebugSystemObjects
+dbgregisters: IDebugRegisters
 
 
 class SelectionMixin:
@@ -43,7 +41,8 @@ class DbgEngCommandHandle(pwndbg.dbg_mod.CommandHandle):
 
 class DbgEngRegisters(pwndbg.dbg_mod.Registers):
     def by_name(self, name: str) -> pwndbg.dbg_mod.Value | None:
-        index = dbgregisters.GetIndexByName(name)
+        index = ctypes.c_ulong()
+        dbgregisters.GetIndexByName(name, ctypes.byref(index))
         return DbgEngValue(dbgregisters.GetValue(index))
 
 
